@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {Play, Pause, Settings, RotateCcw, Coffee, Brain} from 'lucide-react';
+import SettingsModal from '../ui/SettingsModal.jsx';
 
 const Home = () => {
     const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -228,57 +229,6 @@ const Home = () => {
                             </button>
                         </div>
 
-                        {/*SETTINGS MODAL*/}
-                        {showSettings && (
-                            <div className="bg-white rounded-2xl p-6 shadow-lg mb-8 animate-in slide-in-from-top duration-300">
-                             <h3 className="text-xl font-bold text-gray-800 mb-4">Timer Settings</h3>
-              
-                            <div className="space-y-4">
-                                <div>
-                                <label className="block text-gray-700 font-medium mb-2">
-                                    Work Time (minutes)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="60"
-                                    value={settings.work}
-                                    onChange={(e) => updateSettings({...settings, work: parseInt(e.target.value) || 25})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent"
-                                />
-                                </div>
-                                
-                                <div>
-                                <label className="block text-gray-700 font-medium mb-2">
-                                    Short Break (minutes)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="30"
-                                    value={settings.shortBreak}
-                                    onChange={(e) => updateSettings({...settings, shortBreak: parseInt(e.target.value) || 5})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
-                                />
-                                </div>
-                                
-                                <div>
-                                <label className="block text-gray-700 font-medium mb-2">
-                                    Long Break (minutes)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="60"
-                                    value={settings.longBreak}
-                                    onChange={(e) => updateSettings({...settings, longBreak: parseInt(e.target.value) || 15})}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                                />
-                                </div>
-                            </div>
-                        </div>
-                        )}
-
                         {/*STATS*/}
                         <div className="bg-white rounded-2xl p-6 shadow-lg">
                             <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Todays Progress</h3>
@@ -289,6 +239,17 @@ const Home = () => {
                                 </div>
                             </div>
                         </div>
+                        {showSettings &&  (
+                            <SettingsModal 
+                            setIsOpen={setShowSettings }
+                            work={settings.work}
+                            shortBreak={settings.shortBreak}
+                            longBreak={settings.longBreak}
+                            updateSettingsWork={(e) => updateSettings({...settings, work: parseInt(e.target.value) || 25})}
+                            updateSettingsShort={(e) => updateSettings({...settings, shortBreak: parseInt(e.target.value) || 5})}
+                            updateSettingsLong={(e) => updateSettings({...settings, longBreak: parseInt(e.target.value) || 15})} 
+                            />
+                        )}
                  </div>
             </div>
         </div>

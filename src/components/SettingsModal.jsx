@@ -1,6 +1,9 @@
 import { X } from "lucide-react";
+import {useStore} from '../store/store.js';
 
-const SettingsModal = ( {setIsOpen, work, shortBreak, longBreak, updateSettingsWork, updateSettingsShort, updateSettingsLong} ) => {
+const SettingsModal = ( {setIsOpen}) => {
+
+    const {settings, updateSettings, autoStartBreak, toggleAutoStartBreak} = useStore();
 
     return ( //implicit return of the JSX
         <div className="p-1">
@@ -22,8 +25,8 @@ const SettingsModal = ( {setIsOpen, work, shortBreak, longBreak, updateSettingsW
                             type="number"
                             min="1"
                             max="60"
-                            value={work}
-                            onChange={updateSettingsWork}
+                            value={settings.work}
+                            onChange={(e) => updateSettings({...settings, work: parseInt(e.target.value) || 25})}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent"
                         />
                         </div>
@@ -36,8 +39,8 @@ const SettingsModal = ( {setIsOpen, work, shortBreak, longBreak, updateSettingsW
                             type="number"
                             min="1"
                             max="30"
-                            value={shortBreak}
-                            onChange={updateSettingsShort}
+                            value={settings.shortBreak}
+                            onChange={(e) => updateSettings({...settings, shortBreak: parseInt(e.target.value) || 5})}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
                         />
                         </div>
@@ -50,11 +53,25 @@ const SettingsModal = ( {setIsOpen, work, shortBreak, longBreak, updateSettingsW
                             type="number"
                             min="1"
                             max="60"
-                            value={longBreak}
-                            onChange={updateSettingsLong}
+                            value={settings.longBreak}
+                            onChange={(e) => updateSettings({...settings, longBreak: parseInt(e.target.value) || 15})}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                         />
                         </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-6 ">
+                        <span className="text-gray-500">Auto Start Breaks</span>
+                        <button 
+                            className={`w-12 h-10 w-18 rounded-full bg-gray-400 flex items-center shadow-md transform transition-transform ${
+                                autoStartBreak ? ' bg-red-400' : 'translate-x-0'
+                            }`}
+                                onClick={toggleAutoStartBreak}>
+                            <div className={`bg-white w-7 h-7 m-1 rounded-full shadow-md transform transition-transform ${
+                                autoStartBreak ? 'translate-x-9' : 'translate-x-0 bg-red-400'
+                            }`}>
+                            </div> 
+                        </button>
                     </div>
                 </div>
             </div>

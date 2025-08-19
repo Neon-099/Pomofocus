@@ -1,112 +1,35 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {Play, Pause, Settings, RotateCcw, Coffee, Brain} from 'lucide-react';
-import SettingsModal from '../ui/SettingsModal.jsx';
+import {Play, Pause, Settings, RotateCcw, Coffee, Brain, AlarmClock} from 'lucide-react';
+import SettingsModal from '../components/SettingsModal.jsx';
+import {useStore} from '../store/store.js';
 
 const Home = () => {
-    const [timeLeft, setTimeLeft] = useState(25 * 60);
-    const [isActive, setIsActive] = useState(false);
-    const [mode, setMode] = useState('work');
-    const [session, setSession] = useState(0);
     const [showSettings, setShowSettings] = useState(false);
-    const [settings, setSettings] = useState({
-        work: 25,
-        shortBreak: 5,
-        longBreak: 15,
-    });
 
+    const {modes, 
+        mode,  session,
+        timeLeft, isActive,
+        toggleTimer, resetTimer,
+        setTimeLeft, 
+        handleTimerComplete, switchMode} = useStore();
+    
     const intervalRef = useRef();
-    const audioRef = useRef();
-
-    const modes = {
-        work : {
-            duration: settings.work * 60,
-            label: 'Focus time',
-            color: 'from-red-400 to-pink-500',
-            bgColor: 'bg-gradient-to-br from-red-500 to-pink-50',
-            icon: Brain, 
-        },
-        shortBreak: {
-            duration: settings.shortBreak * 60,
-            label: 'Short break',
-            color: 'from-green-400 to-emerald-500',
-            bgColor: 'bg-gradient-to-br from-green-500 to-emerald-50',
-            icon: Coffee,
-        },
-        longBreak: {
-            duration: settings.longBreak * 60,
-            label: 'Long break',
-            color: 'from-yellow-400 to-cyan-500',
-            bgColor: 'bg-gradient-to-br from-blue-500 to-cyan-50',
-            icon: Coffee
-        }
-    };
 
     useEffect(() => {
+        requestNotificationPermission();
+
         if(isActive && timeLeft > 0) {
             intervalRef.current = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
+                setTimeLeft(timeLeft - 1);
             }, 1000);
         }  else if (timeLeft === 0) {
-            handleTimerComplete();
+            handleTimerComplete();   //to stop ticking the timer/sounds
         }   else {
             clearInterval(intervalRef.current);
         }
 
         return () => clearInterval(intervalRef.current);
     }, [isActive, timeLeft]);
-
-        const handleTimerComplete = () => {
-            setIsActive(false);     //to stop ticking the timer/sounds
-        
-        if(audioRef.current) {
-            audioRef.current.play().catch(() => {});
-        }
-            
-        if(mode === 'work') {
-            //increment each sessions and decide next break type based on the new count 
-            setSession((prev) => {
-                const next = prev + 1; //compute the previous to avoid inaccurate of data count
-                const nextMode = next % 4 === 0 ? 'longBreak' : 'shortBreak';
-                setMode(nextMode);
-                setTimeLeft(modes[nextMode].duration);  //reset (to fully break the duration count)
-                return next;
-            }); 
-        } else {
-            //finished a break go back to work
-            setMode('work');
-            setTimeLeft(modes.work.duration);
-        }
-    };
-
-    //CONTROLS
-    const toggleTimer = () => setIsActive((v) => !v);
-
-    const resetTimer = () => {
-        setIsActive(false);
-        setTimeLeft(modes[mode].duration);
-    }
-
-    const switchMode = (newMode) => {
-        setIsActive(false);
-        setMode(newMode);
-        setTimeLeft(modes[newMode].duration)
-    };
-
-    //UPDATE THE SETTINGS
-    const updateSettings = (newSettings) => {
-        setSettings(newSettings);
-
-        const updatedModes = {
-            work: {...modes.work, duration: newSettings.work * 60},
-            shortBreak: {...modes.shortBreak, duration: newSettings.shortBreak * 60 },
-            longBreak: {...modes.longBreak, duration: newSettings.longBreak * 60 }, 
-        };
-
-        //AND IF PAUSE, reflect new duration immediately in the current mode
-        if(!isActive) {
-            setTimeLeft(updatedModes[mode].duration);
-        }
-    }
 
     //UI updates
     const formatTime = (time) => {
@@ -115,16 +38,33 @@ const Home = () => {
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    const durations = modes[mode].duration || 1;
+
+    const currentMode = modes?.[mode]; //safe check
+    const durations = currentMode?.duration || 1;
     const progress = ((durations - timeLeft) / durations) * 100;
 
-    const currentMode = modes[mode];
-    const IconComponent = currentMode.icon;
+    const IconComponent = currentMode?.icon || null;
+
+
+    //ENABLE NOTIFICATIONS
+    const requestNotificationPermission = () => {
+        if('Notification' in window) {
+            Notification.requestPermission().then((permission) => {
+                if(permission === 'granted') {
+                    console.log('Notification permission granted!');
+                } else {
+                    console.log('Notification blocked');
+                }
+            });
+        } else {
+            console.log('This browser does not support notifications');
+        }
+    }
 
     return (
         <div className={`min-h-screen transition-all duration-100 ${currentMode.bgColor}`}>
             {/*BACKGROUND AUDIO*/}
-            <audio ref={audioRef} preload='auto' 
+            <audio  preload='auto' 
                 src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEaBTWB0fPDeyUCLYPD8NSEOAYcabrq4Z1NFQ1Jr+Pt5mMbBTWAy/OhayECG2++8gA=" type="audio/wav">
             </audio>
 
@@ -242,12 +182,6 @@ const Home = () => {
                         {showSettings &&  (
                             <SettingsModal 
                             setIsOpen={setShowSettings }
-                            work={settings.work}
-                            shortBreak={settings.shortBreak}
-                            longBreak={settings.longBreak}
-                            updateSettingsWork={(e) => updateSettings({...settings, work: parseInt(e.target.value) || 25})}
-                            updateSettingsShort={(e) => updateSettings({...settings, shortBreak: parseInt(e.target.value) || 5})}
-                            updateSettingsLong={(e) => updateSettings({...settings, longBreak: parseInt(e.target.value) || 15})} 
                             />
                         )}
                  </div>

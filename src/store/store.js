@@ -16,6 +16,7 @@ export const useStore = create (
             work: 25,
             shortBreak: 5,
             longBreak: 10,
+            alarmSound: 'bell'
         }, 
 
         modes: {
@@ -41,6 +42,12 @@ export const useStore = create (
                 iconName: 'Coffee'
             }
         },
+
+        availableSounds: [
+            { id: 'bell', label: 'Bell', src: `../sounds/bell.mp3`},
+            { id: "chime", label: "Chime", src: "/sounds/chime.mp3" },
+            { id: "beep", label: "Beep", src: "/sounds/beep.mp3" },
+        ],
 
         // Helper function to get icon component
         getIcon: (iconName) => iconMap[iconName],
@@ -81,6 +88,7 @@ export const useStore = create (
         timeLeft: 25 * 60,
         audioRef: null,
         autoStartBreak: false,
+        audioRef: null,
 
         //ACTIONS
         setTimeLeft: (newTime) => set({timeLeft: newTime}),
@@ -137,31 +145,50 @@ export const useStore = create (
             const {modes, mode, session, autoStartBreak} = get();
 
             if(mode === 'work') {
+                
+                
+                
+                //PLAY CHOSEN SOUND
+                const selectedSound = availableSounds.find(
+                    (sound) => sound.id === settings.alarmSound
+                )
+                
+                if(selectedSound) {
+                const audio = new Audio(selectedSound.src);
+                    audio.play().catch(() => {});
+                }
                 //increment each sessions and decide next break type based on the new count 
                 const nextSession = session + 1;
                 const nextMode = nextSession % 4 === 0 ? 'longBreak' : 'shortBreak';
-          
                 set({
                     session: nextSession,
                     mode: nextMode,
                     timeLeft: modes[nextMode].duration,
                     isActive: autoStartBreak
                 });
+             
             } else {
                 //finished a break go back to work
                 set({
                     mode: 'work',
                     timeLeft: modes.work.duration,
                     isActive: false
-                });
+                    });
             }
         },
 
         toggleAutoStartBreak: () => 
             set((state) => ({autoStartBreak: !state.autoStartBreak})),
+    
+        setAlarmSound : (newSound) => 
+            set((state) => ({
+                settings: { ...state.settings, alarmSound: newSound },
+        })), 
+        
+        
+
+
         }),
-
-
         {
             name: 'pomofocusStore'
         }   

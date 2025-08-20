@@ -3,7 +3,9 @@ import {useStore} from '../store/store.js';
 
 const SettingsModal = ( {setIsOpen}) => {
 
-    const {settings, updateSettings, autoStartBreak, toggleAutoStartBreak} = useStore();
+    const {settings, updateSettings, 
+        autoStartBreak, toggleAutoStartBreak
+        ,availableSounds, setAlarmSound  } = useStore();
 
     return ( //implicit return of the JSX
         <div className="p-1">
@@ -96,6 +98,25 @@ const SettingsModal = ( {setIsOpen}) => {
                             }`}>
                             </div> 
                         </button>
+                    </div>
+
+                    <div className="p-4">
+                    <h2 className="text-lg font-semibold mb-2">Settings</h2>
+
+                    <div className="mb-4">
+                        <label className="block mb-2">Alarm Sound:</label>
+                        <select
+                        value={settings.alarmSound}
+                        onChange={(e) => setAlarmSound(e.target.value)}
+                        className="border rounded px-2 py-1"
+                        >
+                        {availableSounds.map((sound) => (
+                            <option key={sound.id} value={sound.id}>
+                            {sound.label}
+                            </option>
+                        ))}
+                        </select>
+                    </div>
                     </div>
                 </div>
             </div>

@@ -2,6 +2,11 @@ import {create} from 'zustand';
 import {persist} from 'zustand/middleware';
 import {Brain, Coffee} from 'lucide-react';
 
+// Icon mapping to avoid serialization issues with persist
+const iconMap = {
+    Brain,
+    Coffee
+};
 
 export const useStore = create (
     persist ( //persist: when want to save it to local storage
@@ -13,33 +18,59 @@ export const useStore = create (
             longBreak: 10,
         }, 
 
-        modes: {},
+        modes: {
+            work: {
+                duration: 25 * 60,
+                label: 'Focus time',
+                color: 'from-red-400 to-pink-500',
+                bgColor: 'bg-gradient-to-br from-red-500 to-pink-50',
+                iconName: 'Brain', 
+            },
+            shortBreak: {
+                duration: 5 * 60,
+                label: 'Short break',
+                color: 'from-green-400 to-emerald-500',
+                bgColor: 'bg-gradient-to-br from-green-500 to-emerald-50',
+                iconName: 'Coffee',
+            },
+            longBreak: {
+                duration: 10 * 60,
+                label: 'Long break',
+                color: 'from-yellow-400 to-cyan-500',
+                bgColor: 'bg-gradient-to-br from-blue-500 to-cyan-50',
+                iconName: 'Coffee'
+            }
+        },
 
+        // Helper function to get icon component
+        getIcon: (iconName) => iconMap[iconName],
 
         initModes: () => {
             const {settings} = get();
 
             set({
-                work : {
-                    duration: settings.work * 60,
-                    label: 'Focus time',
-                    color: 'from-red-400 to-pink-500',
-                    bgColor: 'bg-gradient-to-br from-red-500 to-pink-50',
-                    icon: Brain, 
-                },
-                shortBreak: {
-                    duration: settings.shortBreak * 60,
-                    label: 'Short break',
-                    color: 'from-green-400 to-emerald-500',
-                    bgColor: 'bg-gradient-to-br from-green-500 to-emerald-50',
-                    icon: Coffee,
-                },
-                longBreak: {
-                    duration: settings.longBreak * 60,
-                    label: 'Long break',
-                    color: 'from-yellow-400 to-cyan-500',
-                    bgColor: 'bg-gradient-to-br from-blue-500 to-cyan-50',
-                    icon: Coffee
+                modes : {
+                    work : {
+                        duration: settings.work * 60,
+                        label: 'Focus time',
+                        color: 'from-red-400 to-pink-500',
+                        bgColor: 'bg-gradient-to-br from-red-500 to-pink-50',
+                        iconName: 'Brain', 
+                    },
+                    shortBreak: {
+                        duration: settings.shortBreak * 60,
+                        label: 'Short break',
+                        color: 'from-green-400 to-emerald-500',
+                        bgColor: 'bg-gradient-to-br from-green-500 to-emerald-50',
+                        iconName: 'Coffee',
+                    },
+                    longBreak: {
+                        duration: settings.longBreak * 60,
+                        label: 'Long break',
+                        color: 'from-yellow-400 to-cyan-500',
+                        bgColor: 'bg-gradient-to-br from-blue-500 to-cyan-50',
+                        iconName: 'Coffee'
+                    }
                 }
             })
         },
@@ -49,67 +80,82 @@ export const useStore = create (
         session: 0,
         timeLeft: 25 * 60,
         audioRef: null,
+        autoStartBreak: false,
 
         //ACTIONS
         setTimeLeft: (newTime) => set({timeLeft: newTime}),
 
         updateSettings: (newSettings) => {
-            const {modes, mode, isActive, } = get(); //to read the current state inside the store (ACCESS MULTIPLE STATE AT ONCE)
+            const {modes, mode, isActive} = get();
 
             const updatedModes = {
-                work: {duration: newSettings.work * 60},
-                shortBreak: {duration: newSettings.shortBreak * 60 },
-                longBreak: {duration: newSettings.longBreak * 60 }, 
+                work: {
+                    ...modes.work,
+                    duration: newSettings.work * 60
+                },
+                shortBreak: {
+                    ...modes.shortBreak,
+                    duration: newSettings.shortBreak * 60
+                },
+                longBreak: {
+                    ...modes.longBreak,
+                    duration: newSettings.longBreak * 60
+                }
             };
+
+            // Update current timer if not active and settings changed for current mode
+            const shouldUpdateTimer = !isActive && modes[mode] && 
+                modes[mode].duration !== updatedModes[mode].duration;
 
             set({
                 settings: newSettings,
                 modes: updatedModes,
+                ...(shouldUpdateTimer && { timeLeft: updatedModes[mode].duration })
             });
         },
 
         toggleTimer: () => set((state) => ({isActive: !state.isActive})),
         resetTimer: () => {
-            const {modes, mode, autoStartBreak} = get();
+            const {modes, mode} = get();
             
-            autoStartBreak,
             set({
-                timeLeft: modes[mode].duration})
+                isActive: false,
+                timeLeft: modes[mode].duration
+            });
         },
         switchMode: (newMode) => {
-            const {modes, mode} = get();
+            const {modes} = get();
 
             set ({
                 isActive: false,
                 mode: newMode,
-                timeLeft: modes[mode].duration
+                timeLeft: modes[newMode].duration
             })
         },
 
         handleTimerComplete: () => {
-            const {modes, mode, session} = get();
+            const {modes, mode, session, autoStartBreak} = get();
 
             if(mode === 'work') {
-            //increment each sessions and decide next break type based on the new count 
-                const nextSession = session + 1; //compute the previous to avoid inaccurate of data count
+                //increment each sessions and decide next break type based on the new count 
+                const nextSession = session + 1;
                 const nextMode = nextSession % 4 === 0 ? 'longBreak' : 'shortBreak';
           
                 set({
                     session: nextSession,
                     mode: nextMode,
-                    timeLeft: modes[mode].duration,
-                    autoStartBreak,
-                })  
+                    timeLeft: modes[nextMode].duration,
+                    isActive: autoStartBreak
+                });
             } else {
                 //finished a break go back to work
-                set ({
+                set({
                     mode: 'work',
-                    timeLeft: modes.work.duration
-                })
+                    timeLeft: modes.work.duration,
+                    isActive: false
+                });
             }
         },
-
-        autoStartBreak: false,
 
         toggleAutoStartBreak: () => 
             set((state) => ({autoStartBreak: !state.autoStartBreak})),

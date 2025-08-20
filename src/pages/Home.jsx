@@ -11,10 +11,14 @@ const Home = () => {
         timeLeft, isActive,
         toggleTimer, resetTimer,
         setTimeLeft, 
-        handleTimerComplete, switchMode} = useStore();
+        handleTimerComplete, switchMode, initModes, getIcon} = useStore();
     
     const intervalRef = useRef();
 
+    useEffect(() => { //to initialize the modes
+        initModes();
+    }, []);
+        
     useEffect(() => {
         requestNotificationPermission();
 
@@ -43,7 +47,7 @@ const Home = () => {
     const durations = currentMode?.duration || 1;
     const progress = ((durations - timeLeft) / durations) * 100;
 
-    const IconComponent = currentMode?.icon || null;
+    const IconComponent = currentMode?.iconName ? getIcon(currentMode.iconName) : null;
 
 
     //ENABLE NOTIFICATIONS
@@ -62,7 +66,7 @@ const Home = () => {
     }
 
     return (
-        <div className={`min-h-screen transition-all duration-100 ${currentMode.bgColor}`}>
+        <div className={`min-h-screen transition-all duration-100 ${currentMode?.bgColor || 'bg-gradient-to-br from-red-500 to-pink-50'}`}>
             {/*BACKGROUND AUDIO*/}
             <audio  preload='auto' 
                 src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEaBTWB0fPDeyUCLYPD8NSEOAYcabrq4Z1NFQ1Jr+Pt5mMbBTWAy/OhayECG2++8gA=" type="audio/wav">
@@ -82,19 +86,22 @@ const Home = () => {
                  {/*MODE TABS*/}
                  <div className="flex justify-center mb-8">
                     <div className="bg-white rounded-2xl p-2 shadow-lg inline-flex">
-                        {Object.entries(modes).map(([key, modeData]) => (
-                            <button 
-                                key={key}
-                                onClick={() => switchMode(key)}
-                                className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                                    mode === key 
-                                        ? `bg-gradient-to-r ${modeData.color} text-white shadow-md transform scale-105`
-                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                                }`}>
-                                    <modeData.icon className='w-5 h-5 inline-block mr-2'/>
-                                    {modeData.label}
-                            </button>
-                        ))}
+                        {Object.entries(modes).map(([key, modeData]) => {
+                            const ModeIcon = modeData.iconName ? getIcon(modeData.iconName) : null;
+                            return (
+                                <button 
+                                    key={key}
+                                    onClick={() => switchMode(key)}
+                                    className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                                        mode === key 
+                                            ? `bg-gradient-to-r ${modeData.color} text-white shadow-md transform scale-105`
+                                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                    }`}>
+                                        {ModeIcon && <ModeIcon className='w-5 h-5 inline-block mr-2'/>}
+                                        {modeData.label}
+                                </button>
+                            );
+                        })}
                     </div>
                  </div>
 
@@ -127,15 +134,15 @@ const Home = () => {
                             />
                             <defs>
                                 <linearGradient id='gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
-                                    <stop offset='0%' className={`${currentMode.color.includes('red') ? `stop-red-400` : currentMode.color.includes('green') ? `stop-green-400` : `stop-blue-400`}`} />
-                                    <stop offset="100%" className={`${currentMode.color.includes('pink') ? 'stop-pink-500' : currentMode.color.includes('emerald') ? 'stop-emerald-500' : 'stop-cyan-500'}`}/>                
+                                    <stop offset='0%' className={`${currentMode?.color?.includes('red') ? `stop-red-400` : currentMode?.color?.includes('green') ? `stop-green-400` : `stop-blue-400`}`} />
+                                    <stop offset="100%" className={`${currentMode?.color?.includes('pink') ? 'stop-pink-500' : currentMode?.color?.includes('emerald') ? 'stop-emerald-500' : 'stop-cyan-500'}`}/>                
                                 </linearGradient>
                             </defs>
                         </svg>
 
                         {/*TIMER CONTENT*/}
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <IconComponent className='w-10 h-10 text-gray-600 mb-2' />
+                            {IconComponent && <IconComponent className='w-10 h-10 text-gray-600 mb-2' />}
                             <div className="text-5xl font-bold text-gray-800 mb-2">
                                 {formatTime(timeLeft)}
                             </div>
@@ -149,7 +156,7 @@ const Home = () => {
                         <div className="flex justify-center space-x-4 mb-8 mt-7">
                             <button 
                                 onClick={toggleTimer}
-                                className={`w-16 h-16 rounded-full bg-gradient-to-r ${currentMode.color} text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center`}
+                                className={`w-16 h-16 rounded-full bg-gradient-to-r ${currentMode?.color || 'from-red-400 to-pink-500'} text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center`}
                                 >
                                     {isActive ? <Pause className='w-8 h-8'/> : <Play className='w-8 h-8 ml-1'/>}
                             </button>

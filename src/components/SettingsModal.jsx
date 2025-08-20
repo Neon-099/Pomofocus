@@ -10,9 +10,11 @@ const SettingsModal = ( {setIsOpen}) => {
             
             <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center">
                 <div className="bg-white rounded-2xl shadow-xl w-[400px] max-w-full p-6 relative">
-                    <button className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 mt-2 mr-2 hover:bg-gray-100"
-                        onClick={() => setIsOpen(false)}>
-                            <X size={20}/>
+                    <button 
+                        className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <X size={20}/>
                     </button>
 
                 <h2 className="text-xl font-semibold pb-4 flex items-center justify-center border-b border-gray-300">Settings</h2>
@@ -26,7 +28,14 @@ const SettingsModal = ( {setIsOpen}) => {
                             min="1"
                             max="60"
                             value={settings.work}
-                            onChange={(e) => updateSettings({...settings, work: parseInt(e.target.value) || 25})}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value >= 1 && value <= 60) {
+                                    updateSettings({...settings, work: value});
+                                } else if (e.target.value === '') {
+                                    updateSettings({...settings, work: 25});
+                                }
+                            }}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent"
                         />
                         </div>
@@ -40,7 +49,14 @@ const SettingsModal = ( {setIsOpen}) => {
                             min="1"
                             max="30"
                             value={settings.shortBreak}
-                            onChange={(e) => updateSettings({...settings, shortBreak: parseInt(e.target.value) || 5})}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value >= 1 && value <= 30) {
+                                    updateSettings({...settings, shortBreak: value});
+                                } else if (e.target.value === '') {
+                                    updateSettings({...settings, shortBreak: 5});
+                                }
+                            }}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
                         />
                         </div>
@@ -54,21 +70,29 @@ const SettingsModal = ( {setIsOpen}) => {
                             min="1"
                             max="60"
                             value={settings.longBreak}
-                            onChange={(e) => updateSettings({...settings, longBreak: parseInt(e.target.value) || 15})}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value >= 1 && value <= 60) {
+                                    updateSettings({...settings, longBreak: value});
+                                } else if (e.target.value === '') {
+                                    updateSettings({...settings, longBreak: 15});
+                                }
+                            }}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                         />
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-6 ">
-                        <span className="text-gray-500">Auto Start Breaks</span>
+                    <div className="flex items-center justify-between mt-6">
+                        <span className="text-gray-700 font-medium">Auto Start Breaks</span>
                         <button 
-                            className={`w-12 h-10 w-18 rounded-full bg-gray-400 flex items-center shadow-md transform transition-transform ${
-                                autoStartBreak ? ' bg-red-400' : 'translate-x-0'
+                            className={`relative w-14 h-8 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 ${
+                                autoStartBreak ? 'bg-red-400' : 'bg-gray-300'
                             }`}
-                                onClick={toggleAutoStartBreak}>
-                            <div className={`bg-white w-7 h-7 m-1 rounded-full shadow-md transform transition-transform ${
-                                autoStartBreak ? 'translate-x-9' : 'translate-x-0 bg-red-400'
+                            onClick={toggleAutoStartBreak}
+                        >
+                            <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                                autoStartBreak ? 'translate-x-6' : 'translate-x-0'
                             }`}>
                             </div> 
                         </button>

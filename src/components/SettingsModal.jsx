@@ -103,30 +103,45 @@ const SettingsModal = ( {setIsOpen}) => {
 
 
                     <div className="mt-4 flex justify-between items-center">
-                        <label className="block mb-2">Alarm Sound:</label>
-                        <select
-                        value={settings.alarmSound}
-                        onChange={(e) => setAlarmSound(e.target.value)}
-                        className="border rounded px-2 py-1"
-                        >
-                        {availableSounds.map((sound) => (
-                            <option key={sound.id} value={sound.id}>
-                            {sound.label}
-                            </option>
-                        ))}
-                        </select>
-                         <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.1"
-                            value={settings.alarmVolume}
-                            onChange={(e) => setAlarmVolume(parseFloat(e.target.value))}
-                            className="w-full"
-                            />
-                        <p className="text-sm text-gray-600 mt-1">
-                            {Math.round(settings.alarmVolume * 100)}%
-                        </p>
+                        <label className="block mb-10">Alarm Sound:</label>
+                        <div className="flex flex-col items-center pt-3 ">
+                            <select
+                            value={settings.alarmSound}
+                            onChange={(e) => setAlarmSound(e.target.value)}
+                            className="border rounded px-2 py-1"
+                            >
+                            {availableSounds.map((sound) => (
+                                <option key={sound.id} value={sound.id}>
+                                {sound.label}
+                                </option>
+                            ))}
+                            </select>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value={settings.alarmVolume}
+                                onChange={(e) => setAlarmVolume(parseFloat(e.target.value))}
+                                className="w-29 "
+                                />
+                            <p className="text-sm text-gray-600 mt-1">
+                                {Math.round(settings.alarmVolume * 100)}%
+                            </p>
+                        </div>
+                        <button
+  onClick={() => {
+    const sound = availableSounds.find(s => s.id === settings.alarmSound);
+    if (sound) {
+      const audio = new Audio(sound.src);
+      audio.volume = settings.alarmVolume;
+      audio.play();
+    }
+  }}
+  className="px-4 py-2 bg-blue-500 text-white rounded"
+>
+  Preview Sound
+</button>
                     </div>
                 </div>
             </div>

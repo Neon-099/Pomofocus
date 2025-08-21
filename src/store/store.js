@@ -16,7 +16,8 @@ export const useStore = create (
             work: 25,
             shortBreak: 5,
             longBreak: 10,
-            alarmSound: 'bell'
+            alarmSound: 'bell',
+            alarmVolume: 0.5,
         }, 
 
         modes: {
@@ -44,9 +45,9 @@ export const useStore = create (
         },
 
         availableSounds: [
-            { id: 'bell', label: 'Bell', src: `../sounds/bell.mp3`},
-            { id: "chime", label: "Chime", src: "../sounds/chime.mp3" },
-            { id: "beep", label: "Beep", src: "../sounds/beep.mp3" },
+            { id: 'bell', label: 'Bell', src: `/src/sounds/bell.mp3`},
+            { id: "chime", label: "Chime", src: "/src/sounds/chimp.mp3" },
+            { id: "beep", label: "Beep", src: "/src/sounds/beep.mp3" },
         ],
 
         // Helper function to get icon component
@@ -144,14 +145,64 @@ export const useStore = create (
         handleTimerComplete: () => {
             const {modes, mode, session, autoStartBreak, availableSounds, settings} = get();
             
-            //PLAY CHOSEN SOUND
+            // Stop the timer first
+            set({ isActive: false });
+            
+            //PLAY CHOSEN SOUND - This should happen for ALL timer completions
             const selectedSound = availableSounds.find(
-                (sound) => sound.id === settings.alarmSound
-            ) 
+                sound => sound.id === settings.alarmSound
+            );
+            
             if(selectedSound) {
-                const audio = new Audio(selectedSound.src);
-                audio.volume = settings.alarmVolume;
-                audio.play().catch(() => {});
+                try {
+                    const audio = new Audio(selectedSound.src);
+                    audio.volume = settings.alarmVolume;
+                    
+                    // Add event listeners for debugging
+                    audio.addEventListener('canplaythrough', () => {
+                        console.log('Audio can play through');
+                    });
+                    
+                    audio.addEventListener('error', (e) => {
+                        console.error('Audio error:', e);
+                        console.error('Failed to load:', selectedSound.src);
+                    });
+                    
+                    // Play the audio
+                    audio.play().catch((error) => {
+                        console.error('Audio play failed:', error);
+                        // Fallback: try to play a simple beep
+                        const context = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = context.createOscillator();
+                        const gainNode = context.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(context.destination);
+                        
+                        oscillator.frequency.value = 800;
+                        gainNode.gain.setValueAtTime(settings.alarmVolume * 0.3, context.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 1);
+                        
+                        oscillator.start(context.currentTime);
+                        oscillator.stop(context.currentTime + 1);
+                    });
+                } catch (error) {
+                    console.error('Error creating audio:', error);
+                }
+            }
+
+            // Show browser notification if permission granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const modeLabels = {
+                    work: 'Focus time',
+                    shortBreak: 'Short break',
+                    longBreak: 'Long break'
+                };
+                
+                new Notification(`${modeLabels[mode]} completed!`, {
+                    body: mode === 'work' ? 'Time for a break!' : 'Time to get back to work!',
+                    icon: '/favicon.ico'
+                });
             }
 
             if(mode === 'work') {
@@ -171,7 +222,7 @@ export const useStore = create (
                     mode: 'work',
                     timeLeft: modes.work.duration,
                     isActive: false
-                    });
+                });
             }
         },
 
@@ -181,11 +232,11 @@ export const useStore = create (
         setAlarmSound : (newSound) => 
             set((state) => ({
                 settings: { ...state.settings, alarmSound: newSound },
-        })), 
+            })), 
         
         setAlarmVolume: (newVolume) => 
             set((state) => ({
-                alarmVolume: { ...state.settings, alarmVolume: newVolume },
+                settings: { ...state.settings, alarmVolume: newVolume },
             })),
 
 

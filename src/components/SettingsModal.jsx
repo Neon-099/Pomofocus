@@ -4,8 +4,9 @@ import {useStore} from '../store/store.js';
 const SettingsModal = ( {setIsOpen}) => {
 
     const {settings, updateSettings, 
-        autoStartBreak, toggleAutoStartBreak
-        ,availableSounds, setAlarmSound  } = useStore();
+        autoStartBreak, toggleAutoStartBreak,
+        availableSounds, setAlarmSound, 
+        setAlarmVolume } = useStore();
 
     return ( //implicit return of the JSX
         <div className="p-1">
@@ -100,10 +101,8 @@ const SettingsModal = ( {setIsOpen}) => {
                         </button>
                     </div>
 
-                    <div className="p-4">
-                    <h2 className="text-lg font-semibold mb-2">Settings</h2>
 
-                    <div className="mb-4">
+                    <div className="mt-4 flex justify-between items-center">
                         <label className="block mb-2">Alarm Sound:</label>
                         <select
                         value={settings.alarmSound}
@@ -116,7 +115,18 @@ const SettingsModal = ( {setIsOpen}) => {
                             </option>
                         ))}
                         </select>
-                    </div>
+                         <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={settings.alarmVolume}
+                            onChange={(e) => setAlarmVolume(parseFloat(e.target.value))}
+                            className="w-full"
+                            />
+                        <p className="text-sm text-gray-600 mt-1">
+                            {Math.round(settings.alarmVolume * 100)}%
+                        </p>
                     </div>
                 </div>
             </div>

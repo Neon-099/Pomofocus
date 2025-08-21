@@ -45,8 +45,8 @@ export const useStore = create (
 
         availableSounds: [
             { id: 'bell', label: 'Bell', src: `../sounds/bell.mp3`},
-            { id: "chime", label: "Chime", src: "/sounds/chime.mp3" },
-            { id: "beep", label: "Beep", src: "/sounds/beep.mp3" },
+            { id: "chime", label: "Chime", src: "../sounds/chime.mp3" },
+            { id: "beep", label: "Beep", src: "../sounds/beep.mp3" },
         ],
 
         // Helper function to get icon component
@@ -86,9 +86,9 @@ export const useStore = create (
         isActive: false,
         session: 0,
         timeLeft: 25 * 60,
-        audioRef: null,
         autoStartBreak: false,
         audioRef: null,
+        alarmVolume: 0.5, 
 
         //ACTIONS
         setTimeLeft: (newTime) => set({timeLeft: newTime}),
@@ -142,21 +142,19 @@ export const useStore = create (
         },
 
         handleTimerComplete: () => {
-            const {modes, mode, session, autoStartBreak} = get();
+            const {modes, mode, session, autoStartBreak, availableSounds, settings} = get();
+            
+            //PLAY CHOSEN SOUND
+            const selectedSound = availableSounds.find(
+                (sound) => sound.id === settings.alarmSound
+            ) 
+            if(selectedSound) {
+                const audio = new Audio(selectedSound.src);
+                audio.volume = settings.alarmVolume;
+                audio.play().catch(() => {});
+            }
 
             if(mode === 'work') {
-                
-                
-                
-                //PLAY CHOSEN SOUND
-                const selectedSound = availableSounds.find(
-                    (sound) => sound.id === settings.alarmSound
-                )
-                
-                if(selectedSound) {
-                const audio = new Audio(selectedSound.src);
-                    audio.play().catch(() => {});
-                }
                 //increment each sessions and decide next break type based on the new count 
                 const nextSession = session + 1;
                 const nextMode = nextSession % 4 === 0 ? 'longBreak' : 'shortBreak';
@@ -185,7 +183,10 @@ export const useStore = create (
                 settings: { ...state.settings, alarmSound: newSound },
         })), 
         
-        
+        setAlarmVolume: (newVolume) => 
+            set((state) => ({
+                alarmVolume: { ...state.settings, alarmVolume: newVolume },
+            })),
 
 
         }),

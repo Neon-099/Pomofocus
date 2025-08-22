@@ -1,6 +1,7 @@
 import {create} from 'zustand';
 import {persist} from 'zustand/middleware';
 import {Brain, Coffee} from 'lucide-react';
+import soundFiles from '../sounds';
 
 // Icon mapping to avoid serialization issues with persist
 const iconMap = {
@@ -45,9 +46,9 @@ export const useStore = create (
         },
 
         availableSounds: [
-            { id: 'bell', label: 'Bell', src: `/src/sounds/bell.mp3`},
-            { id: "chime", label: "Chime", src: "/src/sounds/chimp.mp3" },
-            { id: "beep", label: "Beep", src: "/src/sounds/beep.mp3" },
+            { id: 'bell', label: 'bell', src: soundFiles.bell },
+            { id: 'chimp', label: 'chimp', src: soundFiles.chimp },
+            { id: 'beep', label: 'beep', src: soundFiles.beep },
         ],
 
         // Helper function to get icon component
@@ -90,6 +91,7 @@ export const useStore = create (
         autoStartBreak: false,
         audioRef: null,
         alarmVolume: 0.5, 
+        lastResetDate: null,
 
         //ACTIONS
         setTimeLeft: (newTime) => set({timeLeft: newTime}),
@@ -228,11 +230,61 @@ export const useStore = create (
 
         toggleAutoStartBreak: () => 
             set((state) => ({autoStartBreak: !state.autoStartBreak})),
-    
-        setAlarmSound : (newSound) => 
+        
+        resetDailySession: () => {
+            const today = new Date().toDateString();
+            set({session: 0, lastResetDate: today});
+        },
+
+
+        setAlarmSound : (newSound) => {
+            // Update the settings first
             set((state) => ({
                 settings: { ...state.settings, alarmSound: newSound },
-            })), 
+            }));
+
+            // Play preview sound 
+            const {availableSounds, settings} = get();
+            const selectedSound = availableSounds.find(sound => sound.id === newSound);
+
+            if(selectedSound) {
+                try {
+                    const audio = new Audio(selectedSound.src);
+                    audio.volume = settings.alarmVolume || 0.5; // Use current volume or default
+                    
+                    // Add error handling for audio loading
+                    audio.addEventListener('error', (e) => {
+                        console.error('Audio preview error:', e);
+                        console.error('Failed to load preview:', selectedSound.src);
+                    });
+                    
+                    audio.play                          ().catch((error) => {
+                        console.error('Audio preview play failed:', error);
+                        // Try fallback beep sound
+                        try {
+                            const context = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = context.createOscillator();
+                            const gainNode = context.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(context.destination);
+                            
+                            oscillator.frequency.value = 800;
+                            gainNode.gain.setValueAtTime((settings.alarmVolume || 0.5) * 0.3, context.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+                            
+                            oscillator.start(context.currentTime);
+                            oscillator.stop(context.currentTime + 0.5);
+                        } catch (fallbackError) {
+                            console.error('Fallback audio failed:', fallbackError);
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error creating preview audio:`, error);
+                }
+            }
+        },
+
         
         setAlarmVolume: (newVolume) => 
             set((state) => ({

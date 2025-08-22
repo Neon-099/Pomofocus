@@ -1,12 +1,63 @@
-import { X } from "lucide-react";
+import { X, Volume2, AlertCircle } from "lucide-react";
 import {useStore} from '../store/store.js';
+import { useState } from 'react';
 
 const SettingsModal = ( {setIsOpen}) => {
+    const [showDebug, setShowDebug] = useState(false);
+    const [testResults, setTestResults] = useState(null);
 
     const {settings, updateSettings, 
         autoStartBreak, toggleAutoStartBreak,
         availableSounds, setAlarmSound, 
         setAlarmVolume } = useStore();
+
+    // Test all audio functionality
+    const runAudioTest = async () => {
+        setTestResults({ testing: true });
+        
+        const results = {
+            sounds: {},
+            audioContext: false,
+            notifications: false,
+            errors: []
+        };
+
+        // Test AudioContext
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            results.audioContext = !!AudioContext;
+        } catch (e) {
+            results.errors.push('AudioContext not available');
+        }
+
+        // Test Notifications
+        results.notifications = 'Notification' in window && Notification.permission === 'granted';
+
+        // Test each sound file
+        for (const sound of availableSounds) {
+            try {
+                const audio = new Audio(sound.src);
+                await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+                    audio.addEventListener('canplaythrough', () => {
+                        clearTimeout(timeout);
+                        results.sounds[sound.id] = { status: 'success', duration: audio.duration };
+                        resolve();
+                    });
+                    audio.addEventListener('error', (e) => {
+                        clearTimeout(timeout);
+                        results.sounds[sound.id] = { status: 'error', error: e.message };
+                        reject(e);
+                    });
+                });
+            } catch (error) {
+                results.sounds[sound.id] = { status: 'error', error: error.message };
+                results.errors.push(`${sound.label}: ${error.message}`);
+            }
+        }
+
+        setTestResults(results);
+    };
 
     return ( //implicit return of the JSX
         <div className="p-1">
@@ -105,17 +156,26 @@ const SettingsModal = ( {setIsOpen}) => {
                     <div className="mt-4 flex justify-between items-center">
                         <label className="block mb-10">Alarm Sound:</label>
                         <div className="flex flex-col items-center pt-3 ">
-                            <select
-                            value={settings.alarmSound}
-                            onChange={(e) => setAlarmSound(e.target.value)}
-                            className="border rounded px-2 py-1"
-                            >
-                            {availableSounds.map((sound) => (
-                                <option key={sound.id} value={sound.id}>
-                                {sound.label}
-                                </option>
-                            ))}
-                            </select>
+                            <div className="flex items-center gap-2 mb-2">
+                                <select
+                                value={settings.alarmSound}
+                                onChange={(e) => setAlarmSound(e.target.value)}
+                                className="border rounded px-2 py-1"
+                                >
+                                {availableSounds.map((sound) => (
+                                    <option key={sound.id} value={sound.id}>
+                                    {sound.label}
+                                    </option>
+                                ))}
+                                </select>
+                                <button
+                                    onClick={() => setAlarmSound(settings.alarmSound)}
+                                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                                    title="Test current sound"
+                                >
+                                    Test
+                                </button>
+                            </div>
                             <input
                                 type="range"
                                 min="0"
@@ -129,19 +189,71 @@ const SettingsModal = ( {setIsOpen}) => {
                                 {Math.round(settings.alarmVolume * 100)}%
                             </p>
                         </div>
+                    </div>
+
+                    {/* Debug Section */}
+                    <div className="mt-6 border-t pt-4">
                         <button
-  onClick={() => {
-    const sound = availableSounds.find(s => s.id === settings.alarmSound);
-    if (sound) {
-      const audio = new Audio(sound.src);
-      audio.volume = settings.alarmVolume;
-      audio.play();
-    }
-  }}
-  className="px-4 py-2 bg-blue-500 text-white rounded"
->
-  Preview Sound
-</button>
+                            onClick={() => setShowDebug(!showDebug)}
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
+                        >
+                            <AlertCircle size={16} />
+                            Audio Troubleshooting
+                        </button>
+                        
+                        {showDebug && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex gap-2 mb-3">
+                                    <button
+                                        onClick={runAudioTest}
+                                        className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
+                                        disabled={testResults?.testing}
+                                    >
+                                        {testResults?.testing ? 'Testing...' : 'Run Audio Test'}
+                                    </button>
+                                </div>
+                                
+                                {testResults && !testResults.testing && (
+                                    <div className="text-xs space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className={testResults.audioContext ? 'text-green-600' : 'text-red-600'}>
+                                                {testResults.audioContext ? '✅' : '❌'}
+                                            </span>
+                                            <span>Audio Context</span>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <span className={testResults.notifications ? 'text-green-600' : 'text-yellow-600'}>
+                                                {testResults.notifications ? '✅' : '⚠️'}
+                                            </span>
+                                            <span>Notifications</span>
+                                        </div>
+                                        
+                                        <div className="mt-2">
+                                            <div className="font-medium">Sound Files:</div>
+                                            {Object.entries(testResults.sounds).map(([id, result]) => (
+                                                <div key={id} className="flex items-center gap-2 ml-2">
+                                                    <span className={result.status === 'success' ? 'text-green-600' : 'text-red-600'}>
+                                                        {result.status === 'success' ? '✅' : '❌'}
+                                                    </span>
+                                                    <span>{availableSounds.find(s => s.id === id)?.label}</span>
+                                                    {result.error && <span className="text-red-500">({result.error})</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {testResults.errors.length > 0 && (
+                                            <div className="mt-2 p-2 bg-red-50 rounded text-red-700">
+                                                <div className="font-medium">Issues Found:</div>
+                                                {testResults.errors.map((error, i) => (
+                                                    <div key={i} className="text-xs">• {error}</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

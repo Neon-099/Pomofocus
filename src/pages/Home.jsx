@@ -10,8 +10,9 @@ const Home = () => {
         mode,  session,
         timeLeft, isActive,
         toggleTimer, resetTimer,
-        setTimeLeft, 
-        handleTimerComplete, switchMode, initModes, getIcon} = useStore();
+        setTimeLeft, handleTimerComplete,
+        switchMode, initModes, getIcon,
+        resetDailySession,} = useStore();
     
     const intervalRef = useRef();
 
@@ -64,6 +65,19 @@ const Home = () => {
             console.log('This browser does not support notifications');
         }
     }
+
+    //RESET DAILY SESSION
+    useEffect(() => {
+        const now = new Date();
+        const msUntilMidnight = 
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0) - now;
+
+        const timer  = setTimeout(() => {
+          resetDailySession();
+        }, msUntilMidnight);
+
+        return () => clearTimeout(timer);
+    },[]);
 
     return (
         <div className={`min-h-screen transition-all duration-100 ${currentMode?.bgColor || 'bg-gradient-to-br from-red-500 to-pink-50'}`}>

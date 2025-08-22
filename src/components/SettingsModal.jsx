@@ -168,13 +168,6 @@ const SettingsModal = ( {setIsOpen}) => {
                                     </option>
                                 ))}
                                 </select>
-                                <button
-                                    onClick={() => setAlarmSound(settings.alarmSound)}
-                                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                                    title="Test current sound"
-                                >
-                                    Test
-                                </button>
                             </div>
                             <input
                                 type="range"
@@ -189,71 +182,6 @@ const SettingsModal = ( {setIsOpen}) => {
                                 {Math.round(settings.alarmVolume * 100)}%
                             </p>
                         </div>
-                    </div>
-
-                    {/* Debug Section */}
-                    <div className="mt-6 border-t pt-4">
-                        <button
-                            onClick={() => setShowDebug(!showDebug)}
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800"
-                        >
-                            <AlertCircle size={16} />
-                            Audio Troubleshooting
-                        </button>
-                        
-                        {showDebug && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                <div className="flex gap-2 mb-3">
-                                    <button
-                                        onClick={runAudioTest}
-                                        className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600"
-                                        disabled={testResults?.testing}
-                                    >
-                                        {testResults?.testing ? 'Testing...' : 'Run Audio Test'}
-                                    </button>
-                                </div>
-                                
-                                {testResults && !testResults.testing && (
-                                    <div className="text-xs space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className={testResults.audioContext ? 'text-green-600' : 'text-red-600'}>
-                                                {testResults.audioContext ? '✅' : '❌'}
-                                            </span>
-                                            <span>Audio Context</span>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-2">
-                                            <span className={testResults.notifications ? 'text-green-600' : 'text-yellow-600'}>
-                                                {testResults.notifications ? '✅' : '⚠️'}
-                                            </span>
-                                            <span>Notifications</span>
-                                        </div>
-                                        
-                                        <div className="mt-2">
-                                            <div className="font-medium">Sound Files:</div>
-                                            {Object.entries(testResults.sounds).map(([id, result]) => (
-                                                <div key={id} className="flex items-center gap-2 ml-2">
-                                                    <span className={result.status === 'success' ? 'text-green-600' : 'text-red-600'}>
-                                                        {result.status === 'success' ? '✅' : '❌'}
-                                                    </span>
-                                                    <span>{availableSounds.find(s => s.id === id)?.label}</span>
-                                                    {result.error && <span className="text-red-500">({result.error})</span>}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        
-                                        {testResults.errors.length > 0 && (
-                                            <div className="mt-2 p-2 bg-red-50 rounded text-red-700">
-                                                <div className="font-medium">Issues Found:</div>
-                                                {testResults.errors.map((error, i) => (
-                                                    <div key={i} className="text-xs">• {error}</div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
